@@ -14,7 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write('Waiting for database...')
         db_up = False
-        time.sleep(3)
+        # time.sleep(3)
 
         while db_up is False:
             try:
