@@ -1,8 +1,13 @@
 """
 Tests for models
 """
+from datetime import date
+from decimal import Decimal
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+
+from core import models
 
 
 class ModelTests(TestCase):
@@ -45,3 +50,18 @@ class ModelTests(TestCase):
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_expense_success(self):
+        user = get_user_model().objects.create_user(
+            'test@example.com',
+            'root1234'
+        )
+        expense = models.Expense.objects.create(
+            user=user,
+            expense_name='Expense',
+            price=Decimal('10.00'),
+            # category='Bills',
+            date_created=date.today()
+        )
+
+        self.assertEqual(str(expense), expense.expense_name)
