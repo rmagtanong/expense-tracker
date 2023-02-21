@@ -52,7 +52,7 @@ class Expense(models.Model):
     )
     expense_name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=8, decimal_places=2)
-    # category = models.ManyToOneRel('Category')
+    category = models.CharField(max_length=255, default='')
     date_created = models.DateField(blank=True)
 
     def __str__(self):

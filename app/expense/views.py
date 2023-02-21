@@ -1,7 +1,9 @@
 """
 Views for Expense API
 """
-from rest_framework import viewsets
+from django.db.models import Sum
+
+from rest_framework import viewsets, generics
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
@@ -24,10 +26,10 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         :return:
         """
         queryset = self.queryset.filter(user=self.request.user)
-        expense_name = self.request.query_params.get('expense_name')
+        category = self.request.query_params.get('category')
 
-        if expense_name:
-            queryset = queryset.filter(expense_name=expense_name)
+        if category:
+            queryset = queryset.filter(category=category)
 
         return queryset.order_by('-date_created')
 
@@ -38,3 +40,11 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         :return:
         """
         serializer.save(user=self.request.user)
+
+#
+# class ExpenseSummaryViewSet(ExpenseViewSet):
+#     serializer_class = serializers.ExpenseSerializer
+#     queryset = Expense.objects.all()
+#
+#     def get_queryset(self):
+#         return self.queryset

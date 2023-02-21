@@ -10,9 +10,10 @@ from expense import views
 
 router = DefaultRouter()
 router.register('', views.ExpenseViewSet)
+# router.register('summary', views.ExpenseSummaryViewSet)
 
 app_name = 'expense'
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('', include(router.urls)),
 ]

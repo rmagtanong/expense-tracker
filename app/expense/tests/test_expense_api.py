@@ -6,6 +6,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.test import TestCase
 from django.urls import reverse
 
@@ -18,15 +19,24 @@ from expense.serializers import ExpenseSerializer
 
 
 EXPENSE_URL = reverse('expense:expense-list')
+# EXPENSE_SUMMARY_URL = reverse('expense:summary-list')
 
 
-def create_expense(user, **params):
-    defaults = {
+def detail_url(expense_id):
+    return reverse('expense:expense-detail', args=[expense_id])
+
+
+def create_expense_payload():
+    return {
         'expense_name': 'Groceries',
         'price': Decimal('1000.00'),
         'date_created': date.today(),
-        # 'category': 'Food'
+        'category': 'Food'
     }
+
+
+def create_expense(user, **params):
+    defaults = create_expense_payload()
 
     defaults.update(params)
 
@@ -124,28 +134,46 @@ class PrivateExpenseApiTests(TestCase):
         self.assertEqual(expense.date_created, payload['date_created'])
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
-    def test_get_expense_by_name(self):
-        payload = {
-            'expense_name': 'Gas',
-            'price': Decimal('1000.00'),
-            'date_created': datetime.date(2023, 2, 13)
-        }
-        create_expense(user=self.user, **payload)
+    def test_get_all_expenses_per_category(self):
         create_expense(user=self.user)
+        create_expense(user=self.user, **{'category': 'Wants'})
+        create_expense(user=self.user, **{'category': 'Wants'})
 
-        res = self.client.get(EXPENSE_URL, {'expense_name': 'Gas'})
+        res = self.client.get(EXPENSE_URL, {'category': 'Wants'})
 
-        self.assertEqual(res.data[0]['expense_name'], payload['expense_name'])
-        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]['category'], 'Wants')
+        self.assertEqual(res.data[1]['category'], 'Wants')
+        self.assertEqual(len(res.data), 2)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    # def test_get_all_expenses_per_category(self):
+    def test_delete_expense(self):
+        expense = create_expense(user=self.user)
+
+        res = self.client.delete(detail_url(expense.id))
+
+        expenses = Expense.objects.filter(user=self.user)
+
+        self.assertFalse(expenses.exists())
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+    # def test_sum_per_category(self):
     #     create_expense(user=self.user)
     #     create_expense(user=self.user)
-    #     create_expense(user=self.user, category='Wants')
+    #     create_expense(user=self.user, **{'category': 'Wants'})
+    #     create_expense(user=self.user, **{'category': 'Wants'})
     #
-    #     res = self.client.get(EXPENSE_URL, {'category': 'Wants'})
+    #     res = self.client.get(EXPENSE_SUMMARY_URL)
     #
+    #     expense_summary = Expense.objects.values('category')\
+    #                              .order_by('category')\
+    #                              .annotate(total_price=Sum('price'))
+    #
+    #     # serializer = ExpenseSummarySerializer(expense_summary, many=True)
+    #
+    #     print('===== RES =====')
     #     print(res.data)
+    #     # print('===== SERIALZIER =====')
+    #     # print(serializer.data)
     #
     #     self.assertEqual(res.status_code, status.HTTP_200_OK)
+    #     # self.assertEqual(res.data, serializer.data)
