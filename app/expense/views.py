@@ -1,14 +1,15 @@
 """
 Views for Expense API
 """
-from django.db.models import Sum
-
-from rest_framework import viewsets, generics
+from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from core.models import Expense
 from expense import serializers
+from expense.summary import expense_summary
 
 
 class ExpenseViewSet(viewsets.ModelViewSet):
@@ -41,10 +42,6 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         """
         serializer.save(user=self.request.user)
 
-#
-# class ExpenseSummaryViewSet(ExpenseViewSet):
-#     serializer_class = serializers.ExpenseSerializer
-#     queryset = Expense.objects.all()
-#
-#     def get_queryset(self):
-#         return self.queryset
+    @action(detail=False)
+    def summary(self, request, *args, **kwargs):
+        return Response(expense_summary(self.request.user, self.queryset))

@@ -6,7 +6,6 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
 from django.test import TestCase
 from django.urls import reverse
 
@@ -19,7 +18,7 @@ from expense.serializers import ExpenseSerializer
 
 
 EXPENSE_URL = reverse('expense:expense-list')
-# EXPENSE_SUMMARY_URL = reverse('expense:summary-list')
+EXPENSE_SUMMARY_URL = reverse('expense:expense-summary')
 
 
 def detail_url(expense_id):
@@ -54,6 +53,12 @@ def create_user_payload():
         'password': 'test1234',
         'name': 'Test'
     }
+
+
+def last_month_date():
+    today_date = datetime.date.today()
+    last_month = today_date.replace(day=1) - datetime.timedelta(days=1)
+    return last_month
 
 
 class PublicExpenseApiTests(TestCase):
@@ -156,24 +161,18 @@ class PrivateExpenseApiTests(TestCase):
         self.assertFalse(expenses.exists())
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
 
-    # def test_sum_per_category(self):
-    #     create_expense(user=self.user)
-    #     create_expense(user=self.user)
-    #     create_expense(user=self.user, **{'category': 'Wants'})
-    #     create_expense(user=self.user, **{'category': 'Wants'})
-    #
-    #     res = self.client.get(EXPENSE_SUMMARY_URL)
-    #
-    #     expense_summary = Expense.objects.values('category')\
-    #                              .order_by('category')\
-    #                              .annotate(total_price=Sum('price'))
-    #
-    #     # serializer = ExpenseSummarySerializer(expense_summary, many=True)
-    #
-    #     print('===== RES =====')
-    #     print(res.data)
-    #     # print('===== SERIALZIER =====')
-    #     # print(serializer.data)
-    #
-    #     self.assertEqual(res.status_code, status.HTTP_200_OK)
-    #     # self.assertEqual(res.data, serializer.data)
+    def test_sum_per_category(self):
+        create_expense(user=self.user)
+        create_expense(user=self.user)
+        create_expense(user=self.user, **{'category': 'Wants'})
+        create_expense(user=self.user, **{'category': 'Food'})
+        create_expense(user=self.user, **{'category': 'Food',
+                                          'date_created': last_month_date()})
+
+        res = self.client.get(EXPENSE_SUMMARY_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['user'], self.user.email)
+        self.assertEqual(len(res.data['summary']), 2)
+        self.assertEqual(len(res.data['summary'][0]['expense_total']), 1)
+        self.assertEqual(len(res.data['summary'][1]['expense_total']), 2)
