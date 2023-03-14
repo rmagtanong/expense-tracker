@@ -8,11 +8,15 @@ from collections import defaultdict
 
 
 def expense_summary(user, queryset):
-
+    """
+    Summarize `Expenses` totals per month, grouped by category
+    :param user:
+    :param queryset:
+    :return:
+    """
     expenses_by_category = filter_expense_by_category(user, queryset)
 
     totals_by_month = group_expense_per_month(expenses_by_category)
-
     return {
         'user': user.email,
         'summary': build_summary(totals_by_month)
@@ -62,7 +66,7 @@ def build_summary(totals_by_month):
     for month_created, category_sums in totals_by_month.items():
         serialized_output.append({
             'month': month_created,
-            'expense_total': category_sums
+            'expense_breakdown': category_sums
         })
 
     return serialized_output

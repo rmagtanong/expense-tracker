@@ -23,7 +23,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Retrieve Expenses for authenticated User
+        Retrieve `Expenses` for authenticated `User`, can pass a query string
+        `category` to get `Expenses` only for a specific category
         :return:
         """
         queryset = self.queryset.filter(user=self.request.user)
@@ -36,7 +37,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Create new Expense
+        Create new `Expense`
         :param serializer:
         :return:
         """
